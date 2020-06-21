@@ -19,7 +19,7 @@ import java.util.Arrays;
 import static ij.plugin.filter.GaussianBlur.resetOutOfRoi;
 
 public class MedianFilterRunner implements ExtendedPlugInFilter, DialogListener {
-    private static double size = 5.0;
+    private static int size = 5;
     /** whether sigma is given in units corresponding to the pixel scale (not pixels)*/
     private static boolean sigmaScaled = false;
     private ImageProcessor imageProcessor;
@@ -34,16 +34,19 @@ public class MedianFilterRunner implements ExtendedPlugInFilter, DialogListener 
     private boolean calledAsPlugin;
     private boolean hasScale = false;   // whether the image has an x&y scale
 
-    public MedianFilterRunner() {
-        this.imp = IJ.getImage().duplicate();
-        this.imageProcessor = this.imp.getProcessor();
-        this.title = IJ.getImage().getTitle();
-        width = imageProcessor.getWidth();
-        height = imageProcessor.getHeight();
-    }
+//    public MedianFilterRunner(ImageProcessor ip) {
+//        this.imp = IJ.getImage().duplicate();
+//        this.imageProcessor = this.imp.getProcessor();
+//        this.title = IJ.getImage().getTitle();
+//        width = imageProcessor.getWidth();
+//        height = imageProcessor.getHeight();
+//    }
 
     public int setup(String arg, ImagePlus imp) {
-        //this.imp = imp;
+        this.imp = imp;
+        title = imp.getTitle();
+        width = imp.getWidth();
+        height = imp.getHeight();
         if (imp!=null && imp.getRoi()!=null) {
             Rectangle roiRect = imp.getRoi().getBoundingRect();
             if (roiRect.y > 0 || roiRect.y+roiRect.height < imp.getDimensions()[1])
@@ -65,18 +68,16 @@ public class MedianFilterRunner implements ExtendedPlugInFilter, DialogListener 
         }
         GenericDialog gd = new GenericDialog(command);
         size = Math.abs(size);
-        gd.addNumericField("Radius", size, 1);
+        gd.addNumericField("Radius", size, 0);
         if (imp.getCalibration()!=null && !imp.getCalibration().getUnits().equals("pixels")) {
             hasScale = true;
             gd.addCheckbox("Scaled Units ("+imp.getCalibration().getUnits()+")", sigmaScaled);
         } else sigmaScaled = false;
+        IJ.getImage().getProcessor().snapshot();
         gd.addPreviewCheckbox(pfr);
-        //gd.addDialogListener(this);
+        gd.addDialogListener(this);
         gd.showDialog();                    // input by the user (or macro) happens here
         if (gd.wasCanceled()) {
-            imp.setImage(this.imp);
-            //imp.getProcessor().reset(this.imageProcessor);
-            //resetOutOfRoi(imp.getProcessor(), 20);
             return DONE;
         }
         if (oldMacro) size /= 2.5;         // for old macros, "radius" was 2.5 sigma
@@ -85,12 +86,22 @@ public class MedianFilterRunner implements ExtendedPlugInFilter, DialogListener 
         return IJ.setupDialog(imp, flags);
     }
 
+    public boolean dialogItemChanged(GenericDialog gd, AWTEvent e) {
+        size = (int)gd.getNextNumber();
+        if (size <= 0 || gd.invalidNumber())
+            return false;
+        if (hasScale)
+            sigmaScaled = gd.getNextBoolean();
+        return true;
+    }
+
     public void setNPasses(int nPasses) {
         this.nPasses = 2 * nChannels * nPasses;
         pass = 0;
     }
 
     public void run(ImageProcessor ip) {
+        imageProcessor = ip;
         double sizeX = sigmaScaled ? size/imp.getCalibration().pixelWidth : size;
         double sizeY = sigmaScaled ? size/imp.getCalibration().pixelHeight : size;
         if (imp.isComposite() && imp.getNChannels()==imp.getStackSize()) {
@@ -102,6 +113,7 @@ public class MedianFilterRunner implements ExtendedPlugInFilter, DialogListener 
 
         ip.snapshot();
         Median(ip, sizeX, sizeY);
+//        ip.reset();
     }
 
     public void Median(ImageProcessor ip, double sizeX, double sizeY) {
@@ -186,11 +198,5 @@ public class MedianFilterRunner implements ExtendedPlugInFilter, DialogListener 
         //ImagePlus imp = new ImagePlus("Image median", output);
         //imp.show();
         return;
-    }
-
-    public boolean dialogItemChanged(GenericDialog gd, AWTEvent e) {
-        size = (int) gd.getNextNumber();
-        if (size < 0 || gd.invalidNumber()) return true;
-        return false;
     }
 }

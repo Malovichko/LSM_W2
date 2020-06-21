@@ -37,7 +37,7 @@ public class ImagePuccinia2DWindow extends JFrame
     public ImagePuccinia2DWindow(MyLSMImage myimp)
     {
         super("Панель инструментов");
-        IJ.debugMode = true;
+        IJ.debugMode = false;
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         // Создание панелей инструментов
         JToolBar tbCommon = new JToolBar();

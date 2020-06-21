@@ -25,7 +25,7 @@ public class SetLabelMapPlugin implements PlugIn, DialogListener {
     @Override
     public boolean dialogItemChanged(GenericDialog gd, AWTEvent e) {
         if (gd.getPreviewCheckbox().getState())
-            ip.updateAndDraw();
+            ip.setProcessor(im2dproc.getColored2dProc());
         return true;
     }
 
