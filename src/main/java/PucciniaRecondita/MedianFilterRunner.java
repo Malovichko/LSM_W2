@@ -101,7 +101,6 @@ public class MedianFilterRunner implements ExtendedPlugInFilter, DialogListener 
     }
 
     public void run(ImageProcessor ip) {
-        imageProcessor = ip;
         double sizeX = sigmaScaled ? size/imp.getCalibration().pixelWidth : size;
         double sizeY = sigmaScaled ? size/imp.getCalibration().pixelHeight : size;
         if (imp.isComposite() && imp.getNChannels()==imp.getStackSize()) {
@@ -110,10 +109,7 @@ public class MedianFilterRunner implements ExtendedPlugInFilter, DialogListener 
         }
         //new GenericDialog("Median");
         IJ.log("Median filtering with a radius of " + size + " has been started for the image with title '" + title + "'");
-
-        ip.snapshot();
         Median(ip, sizeX, sizeY);
-//        ip.reset();
     }
 
     public void Median(ImageProcessor ip, double sizeX, double sizeY) {
@@ -121,6 +117,7 @@ public class MedianFilterRunner implements ExtendedPlugInFilter, DialogListener 
         if (hasRoi && !calledAsPlugin)
             ip.snapshot();
         FloatProcessor fp = null;
+        System.out.println(ip.getNChannels());
         for (int i=0; i<ip.getNChannels(); i++) {
             fp = ip.toFloat(i, fp);
             if (Thread.currentThread().isInterrupted()) return; // interruption for new parameters during preview?

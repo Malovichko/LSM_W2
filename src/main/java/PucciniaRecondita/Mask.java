@@ -2,6 +2,7 @@ package PucciniaRecondita;
 
 import ij.IJ;
 import ij.ImagePlus;
+import ij.WindowManager;
 import ij.gui.GenericDialog;
 import ij.io.OpenDialog;
 import ij.process.ImageProcessor;
@@ -86,7 +87,8 @@ public class Mask {
         }
         output.setData(outputRaster);
         ImagePlus imp = new ImagePlus("Image", output);
-        imp.show();
+        IJ.getImage().setImage(imp);
+        //imp.show();
 
     }
 

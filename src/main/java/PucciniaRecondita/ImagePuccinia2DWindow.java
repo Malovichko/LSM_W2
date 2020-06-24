@@ -2,9 +2,11 @@ package PucciniaRecondita;
 
 import LsmReader.CZLSMInfo;
 import MainWindow.*;
+import WL.WindowLevelAdjuster;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.ImageStack;
+import ij.WindowManager;
 import ij.gui.GenericDialog;
 import ij.gui.ImageWindow;
 import ij.gui.Toolbar;
@@ -15,13 +17,16 @@ import ij.io.FileSaver;
 import ij.io.OpenDialog;
 import ij.process.ImageProcessor;
 import inra.ijpb.plugins.MorphologicalSegmentation;
-import inra.ijpb.plugins.AreaOpeningPlugin;
 import inra.ijpb.plugins.GrayscaleAttributeFilteringPlugin;
 import inra.ijpb.plugins.DirectionalFilteringPlugin;
-import inra.ijpb.plugins.SizeOpeningPlugin;
+
+import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.awt.image.BufferedImage;
+import java.awt.image.ImageObserver;
+import java.awt.image.ImageProducer;
 import java.io.IOException;
 import java.util.ArrayList;
 
@@ -33,10 +38,11 @@ public class ImagePuccinia2DWindow extends JFrame
     protected DirectionalFilteringPlugin directionalFilteringPlugin;
     protected GrayscaleAttributeFilteringPlugin grayscaleAttributeFilteringPlugin;
     JWindow load_window;
+    Toolbar toolBar;
 
     public ImagePuccinia2DWindow(MyLSMImage myimp)
     {
-        super("Панель инструментов");
+        super("Puccinia Recondita toolbar");
         IJ.debugMode = false;
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         // Создание панелей инструментов
@@ -53,8 +59,9 @@ public class ImagePuccinia2DWindow extends JFrame
         jb.setMaximumSize(new Dimension(32, 32));
         //jb.addMouseListener(new CustomListener());
         //tbCommon.add(jb);
+        jb.setToolTipText("Window/Level settings");
 
-        Toolbar toolBar = new Toolbar();
+        toolBar = new Toolbar();
         //Window_Level_Tool tool = new Window_Level_Tool();
         //tool.addPopupMenu(toolBar);
 
@@ -64,12 +71,12 @@ public class ImagePuccinia2DWindow extends JFrame
 
         this.myimp = myimp;
 
-        String[] processing_method = new String[]{"Поверхность листа с ростковой трубкой", "Клеточная структура эпидермиса листа (RGB)",
-                "Разметка-сегментация клеточной структуры",
-                "Скелетизация ростковой трубки" };
+        String[] processing_method = new String[]{"Leaf surface with sprout tube", "Cell structure of the epidermis of the leaf",
+                "Cell structure segmentation",
+                "Segmentation of morphological structures of the fungus" };
         JToolBar tbEducation = new JToolBar();
         new_box = new JComboBox<>(processing_method);
-        tbEducation.add(new JButton("Выберите способ обработки изображения"));
+        tbEducation.add(new JButton("Choose an image processing method"));
         tbEducation.add(new_box);
         new_box.addActionListener(new Method_selection());
 
@@ -99,11 +106,9 @@ public class ImagePuccinia2DWindow extends JFrame
         JMenuItem median = new JMenuItem(new Median());
         median.setText("Median");
         JMenuItem tables = new JMenuItem(new Open_table_creating());
-        tables.setText("create tables");
+        tables.setText("Create tables");
         JMenuItem skeleton = new JMenuItem(new Skeleton());
-        skeleton.setText("skeletonize");
-        JMenuItem make_black_white = new JMenuItem(new Make_black_white());
-        make_black_white.setText("make black&white");
+        skeleton.setText("Skeletonize");
 
         JToolBar jtb = new JToolBar();
         jtb.add(jb);
@@ -120,7 +125,6 @@ public class ImagePuccinia2DWindow extends JFrame
         filters.add(median);
         action.add(tables);
         action.add(skeleton);
-        action.add(make_black_white);
         process.add(filters);
         process.add(action);
         menu.add(file);
@@ -142,7 +146,7 @@ public class ImagePuccinia2DWindow extends JFrame
 
         load_window = new JWindow();
         JLabel jLabel = new JLabel("",  SwingConstants.CENTER);
-        Image image = Toolkit.getDefaultToolkit().createImage("C:/Users/gents/Downloads/VAyR.gif");
+        Image image = Toolkit.getDefaultToolkit().createImage(getClass().getClassLoader().getResource("VAyR.gif"));
         image = image.getScaledInstance(75, 75, 0);
         ImageIcon imageIcon = new ImageIcon(image);
         imageIcon.setImageObserver(jLabel);
@@ -185,7 +189,7 @@ public class ImagePuccinia2DWindow extends JFrame
         String dir = od.getDirectory();
         String path = dir + name;
         ImagePlus new_imp = new ImagePlus(path);*/
-        im2dproc.setImageMask(mask.getProcessor());
+         im2dproc.setImageMask(mask.getProcessor());
         win.getImagePlus().setProcessor(im2dproc.getCur2DProc());
     }
 
@@ -193,7 +197,6 @@ public class ImagePuccinia2DWindow extends JFrame
     {
         double coef[] = new double[3];
         coef[0] = 2.0; coef[1] = 1.0; coef[2] = 3.0;
-        int diving_value;
         ImagePlus ip = create_mask();
         ImagePlus mask = ip;
         coef = show_dialog(coef);
@@ -213,13 +216,12 @@ public class ImagePuccinia2DWindow extends JFrame
         ImagePlus new_imp = new ImagePlus(path);*/
         im2dproc.setImageMask(mask.getProcessor());
         win.getImagePlus().setProcessor(im2dproc.getColored2dProc());
-        SetLabelMapPlugin dialog = new SetLabelMapPlugin(myimp, ip);
+        SetLabelMapPlugin dialog = new SetLabelMapPlugin(myimp, ip, true);
 
        // diving_value = show_dialog(14);
         load_window.setVisible(true);
        // im2dproc.setDiveValue(diving_value);
         dialog.run(null);
-        ip.setProcessor(im2dproc.getColored2dProc());
     }
 
     public void cell_structure() throws InterruptedException {
@@ -245,13 +247,13 @@ public class ImagePuccinia2DWindow extends JFrame
         ImagePlus new_imp = new ImagePlus("C://LSM_W2//mask.tiff");*/
         im2dproc.setImageMask(mask.getProcessor());
         win.getImagePlus().setProcessor(im2dproc.getCur2DProc());
-        diving_value = show_dialog(14);
+        SetLabelMapPlugin dialog = new SetLabelMapPlugin(myimp, ip, 14, false);
         load_window.setVisible(true);
-        im2dproc.setDiveValue(diving_value);
-        ip.setProcessor(im2dproc.getCur2DProc());
+        dialog.run(null);
 
         Window_Level_Tool wlt = new Window_Level_Tool();
         ActionEvent ae = new ActionEvent(this, -1, "Auto");
+//        wlt.showPopupMenu(toolBar);
         wlt.actionPerformed(ae);
         load_window.setVisible(true);
 
@@ -271,18 +273,10 @@ public class ImagePuccinia2DWindow extends JFrame
     public void sprout_tube()
     {
         ImagePlus imp = myimp.getImp();
-        ImageStack imageStack;
-        imageStack = imp.getImageStack();
+        /*ImageStack imageStack;
+        imageStack = */ imp.getImageStack();
         double coef[] = new double[3];
-        int diving_value;
         coef[0] = -1.0; coef[1] = 2.0; coef[2] = 3.0;
-        System.out.println(imageStack.getSize());
-        int n = imageStack.getSize();
-        for (int i = 0; i < n/2; i++) {
-            imageStack.deleteLastSlice();
-        }
-        System.out.println(imageStack.getSize());
-        myimp.setImpStack(imageStack);
 
         ImagePlus ip = create_mask();
         ImagePlus mask = ip;
@@ -296,6 +290,7 @@ public class ImagePuccinia2DWindow extends JFrame
         }
         myimp.setImpStack(imageStack);*/
         coef = show_dialog(coef);
+        load_window.setVisible(true);
         create_new_chanel(coef[0], coef[1], coef[2]);
         IJ.log("Channel coefficients: channel 1 " + coef[0] + ", channel 2 " + coef[1] + ", channel 3 " + coef[2]);
 
@@ -307,22 +302,31 @@ public class ImagePuccinia2DWindow extends JFrame
 
         im2dproc.setImageMask(mask.getProcessor());
         win.getImagePlus().setProcessor(im2dproc.getCur2DProc());
-
-        diving_value = show_dialog(-1);
-        im2dproc.setDiveValue(diving_value);
-        ip.setProcessor(im2dproc.getCur2DProc());
+        SetLabelMapPlugin dialog = new SetLabelMapPlugin(myimp, ip, -1, false);
+        load_window.setVisible(true);
+        dialog.run(null);
 
         directionalFilteringPlugin = new DirectionalFilteringPlugin();
         directionalFilteringPlugin.showDialog(IJ.getImage(), "", null);
+        load_window.setVisible(true);
         directionalFilteringPlugin.run(IJ.getImage().getProcessor());
         directionalFilteringPlugin.setup("final", IJ.getImage());
 
-        MedianFilter medianFilter = new MedianFilter(5);
-        try {
-            medianFilter.run(true);
-        } catch (IOException ex) {
-            ex.printStackTrace();
-        }
+        GaussianBlur gaussianBlur = new GaussianBlur();
+        new PlugInFilterRunner(gaussianBlur, "Gaussian Blur", null);
+
+        Window_Level_Tool wlt = new Window_Level_Tool();
+        wlt.run(false);
+
+        //костыль
+        IJ.getImage().setImage(IJ.getImage().getImage());
+
+        MedianFilterRunner medianFilterRunner = new MedianFilterRunner();
+        new PlugInFilterRunner(medianFilterRunner, "Median Filter", null);
+
+        new Mask(IJ.getImage().getProcessor());
+
+
     }
 
 
@@ -340,6 +344,13 @@ public class ImagePuccinia2DWindow extends JFrame
         myimp.cleanImage();
         return ip;
     }
+    private void advice(){
+        GenericDialog gd = new GenericDialog("Warning!");
+        gd.addMessage("For further work you need the watershed-lines-image");
+        gd.showDialog();
+    }
+
+
 
     protected double[] show_dialog(double[] coef){
         GenericDialog gd = new GenericDialog("Coefficients");
@@ -356,27 +367,20 @@ public class ImagePuccinia2DWindow extends JFrame
         return coef;
     }
 
-    protected int show_dialog(int diving_value){
-        GenericDialog gd = new GenericDialog("Diving value");
-        gd.addMessage("Set diving value");
-       // gd.addPreviewCheckbox();
-        gd.addNumericField("Diving value", diving_value, 1);
-        gd.addCheckbox("Preview", false);
-        gd.showDialog();
-        if (gd.wasCanceled())
-            return 0;
-        diving_value = (int) gd.getNextNumber();
-        return diving_value;
-    }
-
 
     //-----------------------------------------------------------------------------
     // Команда для кнопки "Сохранения"
     class SaveAction extends AbstractAction{
+        private BufferedImage image;
 
         public SaveAction() {
+            try {
+                image = ImageIO.read(getClass().getClassLoader().getResource("save.png"));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
             // Настройка иконок
-            putValue(AbstractAction.SMALL_ICON, new ImageIcon("images/save.png"));
+            putValue(AbstractAction.SMALL_ICON, new ImageIcon(image));
         }
         @Override
         public void actionPerformed(ActionEvent e) {
@@ -392,8 +396,6 @@ public class ImagePuccinia2DWindow extends JFrame
         public void actionPerformed(ActionEvent e) {
             GaussianBlur gaussianBlur = new GaussianBlur();
             new PlugInFilterRunner(gaussianBlur, "Gaussian Blur", null);
-            gaussianBlur.setup(null, IJ.getImage());
-            gaussianBlur.run(IJ.getImage().getProcessor());
 
         }
     }
@@ -405,8 +407,6 @@ public class ImagePuccinia2DWindow extends JFrame
         public void actionPerformed(ActionEvent e) {
             MedianFilterRunner medianFilterRunner = new MedianFilterRunner();
             new PlugInFilterRunner(medianFilterRunner, "Median Filter", null);
-           medianFilterRunner.setup(null, IJ.getImage());
-           medianFilterRunner.run(IJ.getImage().getProcessor());
         }
     }
 
@@ -414,9 +414,17 @@ public class ImagePuccinia2DWindow extends JFrame
     // Команда для кнопки "Морфологическая сегментация"
     class MorfSegm extends AbstractAction{
 
+        private BufferedImage image;
+
         public MorfSegm() {
             // Настройка иконок
-            putValue(AbstractAction.SMALL_ICON, new ImageIcon("images/morf_segm.png"));
+            try {
+                image = ImageIO.read(getClass().getClassLoader().getResource("morf_segm.png"));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            putValue(AbstractAction.SMALL_ICON, new ImageIcon(image));
+            putValue(AbstractAction.SHORT_DESCRIPTION, "plugin Morphological Segmentation");
         }
         @Override
         public void actionPerformed(ActionEvent e) {
@@ -427,8 +435,15 @@ public class ImagePuccinia2DWindow extends JFrame
     //-----------------------------------------------------------------------------
     // Команда для кнопки "Анизотропная диффузия"
     class Anis_Diffusion extends AbstractAction{
+        private BufferedImage image;
         public Anis_Diffusion(){
-            putValue(AbstractAction.SMALL_ICON, new ImageIcon("images/anis.png"));
+            try {
+                image = ImageIO.read(getClass().getClassLoader().getResource("anis.png"));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            putValue(AbstractAction.SMALL_ICON, new ImageIcon(image));
+            putValue(AbstractAction.SHORT_DESCRIPTION, "Anisotropic diffusion");
         }
 
         @Override
@@ -442,9 +457,17 @@ public class ImagePuccinia2DWindow extends JFrame
     // Команда для кнопки "Gray scale"
     class GrayScale extends AbstractAction{
 
+        private BufferedImage image;
+
         public GrayScale() {
+            try {
+                image = ImageIO.read(getClass().getClassLoader().getResource("wheat.png"));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
             // Настройка иконок
-            putValue(AbstractAction.SMALL_ICON, new ImageIcon("images/wheat.png"));
+            putValue(AbstractAction.SMALL_ICON, new ImageIcon(image));
+            putValue(AbstractAction.SHORT_DESCRIPTION, "Grayscale filtering");
         }
         @Override
         public void actionPerformed(ActionEvent e) {
@@ -457,20 +480,21 @@ public class ImagePuccinia2DWindow extends JFrame
     }
 
 
-    class Make_black_white extends AbstractAction{
-
-        @Override
-        public void actionPerformed(ActionEvent e) {
-            new Mask(IJ.getImage().getProcessor());
-        }
-    }
-
     //-----------------------------------------------------------------------------
     // Команда для кнопки "create tables"
     class Open_table_creating extends AbstractAction{
 
         @Override
         public void actionPerformed(ActionEvent e) {
+            advice();
+            ImagePlus imagePlus = IJ.getImage();
+            ImageConverter imageConverter = new ImageConverter(imagePlus);
+            imageConverter.convertToGray8();
+            ImageProcessor imageProcessor = IJ.getImage().getProcessor();
+            Skeletonize3D_ skeletonize3D_ = new Skeletonize3D_();
+            skeletonize3D_.setup("", imagePlus);
+            skeletonize3D_.run(imageProcessor);
+            imagePlus.updateAndDraw();
             try {
                 new Mask(IJ.getImage());
             } catch (IOException ex) {
@@ -501,10 +525,16 @@ public class ImagePuccinia2DWindow extends JFrame
     // Команда для кнопки "Открытия"
     class OpenAction extends AbstractAction {
         private static final long serialVersionUID = 1L;
+        private BufferedImage image;
 
         public OpenAction() {
+            try {
+                image = ImageIO.read(getClass().getClassLoader().getResource("open.png"));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
             // Настройка иконок
-            putValue(AbstractAction.SMALL_ICON, new ImageIcon("images/open.png"));
+            putValue(AbstractAction.SMALL_ICON, new ImageIcon(image));
         }
 
         // Обработка действия
@@ -527,10 +557,17 @@ public class ImagePuccinia2DWindow extends JFrame
     //-----------------------------------------------------------------------------
     // Команда для кнопки "DirectionalFilter"
     class DirectionalFiltering extends AbstractAction {
+        private BufferedImage image;
 
         public DirectionalFiltering() {
+            try {
+                image = ImageIO.read(getClass().getClassLoader().getResource("directional.png"));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
             // Настройка иконок
-            putValue(AbstractAction.SMALL_ICON, new ImageIcon("images/directional.png"));
+            putValue(AbstractAction.SMALL_ICON, new ImageIcon(image));
+            putValue(AbstractAction.SHORT_DESCRIPTION, "Directional filtering");
         }
 
         @Override
@@ -550,10 +587,16 @@ public class ImagePuccinia2DWindow extends JFrame
     class ExitAction extends AbstractAction
     {
         private static final long serialVersionUID = 1L;
+        private BufferedImage image;
 
         public ExitAction() {
+            try {
+                image = ImageIO.read(getClass().getClassLoader().getResource("exit.png"));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
             // Настройка иконок
-            putValue(AbstractAction.SMALL_ICON, new ImageIcon("images/exit.png"));
+            putValue(AbstractAction.SMALL_ICON, new ImageIcon(image));
         }
 
         // Обработка действия

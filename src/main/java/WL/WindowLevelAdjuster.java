@@ -4,6 +4,7 @@ package WL;
 import java.awt.*;
 
 import ij.*;
+import ij.measure.Calibration;
 import ij.plugin.*;
 import ij.process.*;
 

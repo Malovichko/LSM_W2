@@ -107,6 +107,11 @@ public final class Window_Level_Tool extends PlugInTool implements ActionListene
         this.popup1.show(var1.getComponent(), var1.getX() - 30, var1.getY() + 0);
     }
 
+    public void showPopupMenu(Toolbar var2) {
+        this.addPopupMenu(var2);
+        this.popup1.show(var2, 30, 30);
+    }
+
     void addPopupMenu(Toolbar var1) {
         ImagePlus var2 = IJ.getImage();
         if (this.impLast != var2) {
@@ -157,7 +162,6 @@ public final class Window_Level_Tool extends PlugInTool implements ActionListene
     public void actionPerformed(ActionEvent var1) {
         String var2 = var1.getActionCommand();
         if ("Auto".equals(var2)) {
-            //System.out.println("A");
             this.autoItemActionPerformed(var1);
         } else if ("Reset".equals(var2)) {
             this.resetItemActionPerformed(var1);
@@ -187,6 +191,78 @@ public final class Window_Level_Tool extends PlugInTool implements ActionListene
 
             this.autoThreshold = 0;
             this.impLast = var1;
+        }
+    }
+
+    public void run(boolean mode) {
+        if (!(this.impLast != null && this.impLast.isVisible())) {
+            this.setupImage(IJ.getImage(), true);
+        }
+        if (this.impLast != null && this.impLast.isVisible()) {
+            int var2 = this.impLast.getBitDepth();
+            if (var2 != 16 && var2 != 32) {
+                this.resetItemActionPerformed(new ActionEvent(this, -1, "Auto"));
+            } else {
+                Calibration var5 = this.impLast.getCalibration();
+                this.impLast.setCalibration((Calibration)null);
+                ImageStatistics var6 = this.impLast.getStatistics();
+                this.impLast.setCalibration(var5);
+                int var7 = var6.pixelCount / 10;
+                int[] var8 = var6.histogram;
+                if (this.autoThreshold < 10) {
+                    this.autoThreshold = 5000;
+                } else {
+                    this.autoThreshold /= 2;
+                }
+
+                int var9 = var6.pixelCount / this.autoThreshold;
+                int var10 = -1;
+
+                boolean var11;
+                int var12;
+                do {
+                    ++var10;
+                    var12 = var8[var10];
+                    if (var12 > var7) {
+                        var12 = 0;
+                    }
+
+                    var11 = var12 > var9;
+                } while(!var11 && var10 < 255);
+
+                int var3 = var10;
+                var10 = 256;
+
+                do {
+                    --var10;
+                    var12 = var8[var10];
+                    if (var12 > var7) {
+                        var12 = 0;
+                    }
+
+                    var11 = var12 > var9;
+                } while(!var11 && var10 > 0);
+
+                if (var10 >= var3) {
+                    this.currentMin = var6.histMin + (double)var3 * var6.binSize;
+                    this.currentMax = var6.histMin + (double)var10 * var6.binSize;
+                    if (this.currentMin == this.currentMax) {
+                        this.currentMin = var6.min;
+                        this.currentMax = var6.max;
+                    }
+
+                    this.adjustWindowLevel(this.impLast, 0.0D, 0.0D);
+                }
+
+            }
+        }
+        //else System.out.println("B");
+        //System.out.println(var1.getID() + " " + var1.getActionCommand() + " " + var1.getSource().toString());
+        WindowLevelAdjuster wl = new WindowLevelAdjuster();
+        if (mode) {
+            wl.runInThread("");
+        } else {
+            wl.run("");
         }
     }
 

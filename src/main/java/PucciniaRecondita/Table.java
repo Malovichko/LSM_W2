@@ -1,7 +1,16 @@
 package PucciniaRecondita;
 
+import ResultWindow.ObjectInfo;
+import ij.io.SaveDialog;
+
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.*;
 import java.util.List;
 
@@ -25,6 +34,7 @@ public class Table extends JFrame {
         frame.pack();
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
+        save_tables(data, table_name);
     }
 
     private void branch_point_table( Map<Integer, List<Integer>> Y, String table_name)
@@ -72,6 +82,34 @@ public class Table extends JFrame {
             data[i][2] = splt[1];
         }
         return data;
+    }
+
+    public void save_tables(Object[][] data, String table_name) {
+
+            try {
+
+                SaveDialog openDialog = new SaveDialog("Save as CSV", this.getTitle(), ".csv");
+                String directory = openDialog.getDirectory();
+                String name = openDialog.getFileName();
+                if (name == null) return;
+
+                String path = directory + name;
+                if (name.split(".").length == 1) {
+                    path += ".csv";
+                }
+                System.out.println(path);
+                BufferedWriter writer = new BufferedWriter(new FileWriter(path));
+                writer.write("Number; coordinate X; coordinate Y\n");
+                for (int i = 0; i < data.length; i++) {
+                    writer.write( data[i][0].toString() + ";"
+                            + data[i][1].toString() + ";"
+                            + data[i][2].toString() + "\n");
+                }
+                writer.close();
+            }
+            catch (IOException err) {
+                err.printStackTrace();
+            }
     }
 
 
