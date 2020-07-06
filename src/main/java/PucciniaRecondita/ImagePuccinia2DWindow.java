@@ -40,6 +40,8 @@ public class ImagePuccinia2DWindow extends JFrame
     JWindow load_window;
     Toolbar toolBar;
 
+
+
     public ImagePuccinia2DWindow(MyLSMImage myimp)
     {
         super("Puccinia Recondita toolbar");
@@ -81,6 +83,9 @@ public class ImagePuccinia2DWindow extends JFrame
         new_box.addActionListener(new Method_selection());
 
 
+
+
+
         // Блокируем возможность перетаскивания панели
         tbEducation.setFloatable(false);
         // Блокируем возможность эффекта интерактивности - при наведении
@@ -109,6 +114,8 @@ public class ImagePuccinia2DWindow extends JFrame
         tables.setText("Create tables");
         JMenuItem skeleton = new JMenuItem(new Skeleton());
         skeleton.setText("Skeletonize");
+        JMenuItem diving_value_update = new JMenuItem(new Diving_value_update());
+        diving_value_update.setText("Diving value");
 
         JToolBar jtb = new JToolBar();
         jtb.add(jb);
@@ -125,6 +132,7 @@ public class ImagePuccinia2DWindow extends JFrame
         filters.add(median);
         action.add(tables);
         action.add(skeleton);
+        action.add(diving_value_update);
         process.add(filters);
         process.add(action);
         menu.add(file);
@@ -204,7 +212,7 @@ public class ImagePuccinia2DWindow extends JFrame
         create_new_chanel(coef[0], coef[1], coef[2]);
         IJ.log("Channel coefficients: channel 1 " + coef[0] + ", channel 2 " + coef[1] + ", channel 3 " + coef[2]);
 
-        ip = myimp.convertTo2DImage(5, 10);
+        ip = myimp.convertTo2DImage(10, 10);
         ImageWindow win = new ImageWindow(ip);
         Image2DProcessor im2dproc = myimp.get2DProc();
         ip.setProcessor(im2dproc.getColored2dProc());
@@ -294,7 +302,7 @@ public class ImagePuccinia2DWindow extends JFrame
         create_new_chanel(coef[0], coef[1], coef[2]);
         IJ.log("Channel coefficients: channel 1 " + coef[0] + ", channel 2 " + coef[1] + ", channel 3 " + coef[2]);
 
-        ip = myimp.convertTo2DImage(5, 10);
+        ip = myimp.convertTo2DImage(10, 10);
 
         ImageWindow win = new ImageWindow(ip);
         Image2DProcessor im2dproc = myimp.get2DProc();
@@ -320,11 +328,12 @@ public class ImagePuccinia2DWindow extends JFrame
 
         //костыль
         IJ.getImage().setImage(IJ.getImage().getImage());
+        new Mask(IJ.getImage().getProcessor());
 
         MedianFilterRunner medianFilterRunner = new MedianFilterRunner();
         new PlugInFilterRunner(medianFilterRunner, "Median Filter", null);
 
-        new Mask(IJ.getImage().getProcessor());
+       // new Mask(IJ.getImage().getProcessor());
 
 
     }
@@ -337,8 +346,8 @@ public class ImagePuccinia2DWindow extends JFrame
         gb3d.run(imp, false);
         ImagePlus ip;
         Image2DProcessor mask = new Image2DProcessor();
-        mask.calculateSurface(myimp.imageStacks.get(0), 0, 0);
-        mask.smooth2DImage(5, 10);
+        mask.calculateSurface(myimp.imageStacks.get(0), 10, 10);
+        mask.smooth2DImage(10, 10);
         ip = mask.getMaskImage();
         ip.setCalibration(myimp.getOriginalImage().getCalibration());
         myimp.cleanImage();
@@ -517,6 +526,7 @@ public class ImagePuccinia2DWindow extends JFrame
             skeletonize3D_.setup("", imagePlus);
             skeletonize3D_.run(imageProcessor);
             imagePlus.updateAndDraw();
+            IJ.getImage().setTitle("Skeleton of a sprout tube");
         }
     }
 
@@ -550,6 +560,14 @@ public class ImagePuccinia2DWindow extends JFrame
             ImageConverter imageConverter = new ImageConverter(imp);
             imageConverter.convertToGray8();
 
+        }
+    }
+
+    class Diving_value_update extends  AbstractAction{
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            SetLabelMapPlugin dialog = new SetLabelMapPlugin(myimp, IJ.getImage(), -1, false);
         }
     }
 

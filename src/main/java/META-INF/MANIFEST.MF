@@ -1,3 +1,7 @@
 Manifest-Version: 1.0
 Main-Class: Main
+Implementation-Title: LSM_W2
+Class-Path: MorphoLibJ_-1.3.2.jar inra.ijpb.plugins.MorphologicalSegmentation
+
+
 

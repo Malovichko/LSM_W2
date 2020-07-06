@@ -40,9 +40,9 @@ public class Table extends JFrame {
     private void branch_point_table( Map<Integer, List<Integer>> Y, String table_name)
     {
         String[] columnNames = {
-                "Номер точки",
-                "Координата X",
-                "Координата Y"
+                "Number",
+                "Coordinate X",
+                "Coordinate Y"
         };
         String[][] data = convertWithStream(Y);
         create_frame(data, columnNames, table_name);
@@ -88,7 +88,7 @@ public class Table extends JFrame {
 
             try {
 
-                SaveDialog openDialog = new SaveDialog("Save as CSV", this.getTitle(), ".csv");
+                SaveDialog openDialog = new SaveDialog("Save as CSV", table_name, ".csv");
                 String directory = openDialog.getDirectory();
                 String name = openDialog.getFileName();
                 if (name == null) return;

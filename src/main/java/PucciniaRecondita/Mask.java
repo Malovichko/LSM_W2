@@ -180,9 +180,9 @@ public class Mask {
             }
         }
       //  vector_coordinate_search(intersection_points, outputRaster);
-        new Table(intersection_points, "Точки пересечения с клеточными стенками");
+        new Table(intersection_points, "Intersection points with cell wall");
         output.setData(outputRaster);
-        ImagePlus imp = new ImagePlus("Image", output);
+        ImagePlus imp = new ImagePlus("Image1", output);
         imp.show();
         showY(outputRaster);
     }
@@ -247,12 +247,12 @@ public class Mask {
             }
         }
 
-        new Table(Y, "Точки ветвления ростковой трубки");
+        new Table(Y, "Branch points of the sprout tube");
         paint(Y, outputRaster);
 
         BufferedImage output = new BufferedImage(width, height, BufferedImage.TYPE_USHORT_GRAY);
         output.setData(outputRaster);
-        ImagePlus imp = new ImagePlus("Image", output);
+        ImagePlus imp = new ImagePlus("Skeleton of a sprout tube with branch points", output);
         imp.show();
     }
 
